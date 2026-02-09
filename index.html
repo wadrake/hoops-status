@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hoops Status — NBA Injury Report</title>
+  <meta name="description" content="Live NBA injury status dashboard: Out, Questionable, Probable, Doubtful, and game-time decisions." />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar__row">
+      <div class="brand">
+        <div class="brand__logo" aria-hidden="true">HS</div>
+        <div class="brand__text">
+          <div class="brand__name">Hoops Status</div>
+          <div class="brand__tag">NBA Injury Report Dashboard</div>
+        </div>
+      </div>
+
+      <div class="topbar__actions">
+        <button id="themeToggle" class="btn btn--ghost" type="button" aria-label="Toggle dark mode">
+          Dark
+        </button>
+        <a class="btn btn--primary" href="#out-tonight">Out Tonight</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="hero__left">
+        <h1>NBA Injury Report</h1>
+        <p class="muted">
+          Fast status checks for bettors, fantasy players, and fans. Updated timestamps included per player.
+        </p>
+        <div class="meta">
+          <span class="pill" id="lastRefreshedPill">Last refreshed: —</span>
+          <span class="pill pill--outline" id="rowsPill">Players: —</span>
+        </div>
+      </div>
+
+      <div class="hero__right">
+        <div class="searchbox">
+          <label class="sr-only" for="q">Search player</label>
+          <input id="q" type="search" placeholder="Search player (e.g., Curry, LeBron)..." autocomplete="off" />
+          <button id="clearSearch" class="btn btn--ghost" type="button">Clear</button>
+        </div>
+
+        <div class="controls">
+          <div class="control">
+            <label for="statusFilter">Status</label>
+            <select id="statusFilter">
+              <option value="ALL">All</option>
+              <option value="OUT">Out</option>
+              <option value="DOUBTFUL">Doubtful</option>
+              <option value="QUESTIONABLE">Questionable</option>
+              <option value="PROBABLE">Probable</option>
+            </select>
+          </div>
+
+          <div class="control">
+            <label for="teamFilter">Team</label>
+            <select id="teamFilter">
+              <option value="ALL">All Teams</option>
+            </select>
+          </div>
+
+          <div class="control">
+            <label for="sortBy">Sort</label>
+            <select id="sortBy">
+              <option value="UPDATED_DESC">Last update (newest)</option>
+              <option value="UPDATED_ASC">Last update (oldest)</option>
+              <option value="PLAYER_ASC">Player (A→Z)</option>
+              <option value="TEAM_ASC">Team (A→Z)</option>
+              <option value="STATUS_ASC">Status (A→Z)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="out-tonight">
+      <div class="panel__head">
+        <h2>Out Tonight</h2>
+        <p class="muted">Quick view: players currently listed as <strong>OUT</strong>.</p>
+      </div>
+      <div class="tablewrap" role="region" aria-label="Out Tonight table" tabindex="0">
+        <table class="table" id="outTonightTable">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Team</th>
+              <th>Injury</th>
+              <th>Status</th>
+              <th>Return</th>
+              <th>Last Update</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="empty" id="outTonightEmpty" hidden>No players currently marked OUT.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__head">
+        <h2>All Injury Status</h2>
+        <p class="muted">
+          Use filters to narrow to Game-Time Decisions, team-specific views, and more.
+        </p>
+      </div>
+
+      <div class="tablewrap" role="region" aria-label="All injuries table" tabindex="0">
+        <table class="table" id="injuriesTable">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Team</th>
+              <th>Injury</th>
+              <th>Status</th>
+              <th>Return</th>
+              <th>Last Update</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="empty" id="injuriesEmpty" hidden>No results. Try clearing filters/search.</div>
+      </div>
+
+      <div class="footnote muted">
+        Tip: Keep this page fast. Add separate SEO pages later like <span class="mono">/team/lakers</span> and
+        <span class="mono">/player/lebron-james</span> once you’re ready to scale.
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__row">
+      <span class="muted">© <span id="year"></span> Hoops Status</span>
+      <span class="muted">Built for speed • Mobile-first • Not affiliated with ESPN</span>
+    </div>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>

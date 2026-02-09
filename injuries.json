@@ -1,0 +1,45 @@
+{
+  "last_refreshed_iso": "2026-02-07T00:05:00-05:00",
+  "items": [
+    {
+      "player": "LeBron James",
+      "team": "LAL",
+      "injury": "Ankle soreness",
+      "status": "QUESTIONABLE",
+      "expected_return": "Next game",
+      "updated_iso": "2026-02-06T21:30:00-05:00"
+    },
+    {
+      "player": "Stephen Curry",
+      "team": "GSW",
+      "injury": "Knee contusion",
+      "status": "OUT",
+      "expected_return": "Feb 9",
+      "updated_iso": "2026-02-06T18:10:00-05:00"
+    },
+    {
+      "player": "Giannis Antetokounmpo",
+      "team": "MIL",
+      "injury": "Rest / knee management",
+      "status": "PROBABLE",
+      "expected_return": "Tonight",
+      "updated_iso": "2026-02-06T19:50:00-05:00"
+    },
+    {
+      "player": "Jayson Tatum",
+      "team": "BOS",
+      "injury": "Wrist sprain",
+      "status": "DOUBTFUL",
+      "expected_return": "Feb 11",
+      "updated_iso": "2026-02-06T16:20:00-05:00"
+    },
+    {
+      "player": "Luka Dončić",
+      "team": "DAL",
+      "injury": "Back tightness",
+      "status": "QUESTIONABLE",
+      "expected_return": "Tonight (GTD)",
+      "updated_iso": "2026-02-06T22:05:00-05:00"
+    }
+  ]
+}
