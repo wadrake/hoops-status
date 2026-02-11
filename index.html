@@ -3,173 +3,403 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>NBA Injuries (By Team)</title>
+  <title>Hoops Status – NBA Injuries</title>
   <style>
-    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
-    body { margin: 0; background: #0b0f19; color: #e8eefc; }
-    header { padding: 20px 16px; border-bottom: 1px solid rgba(255,255,255,.08); position: sticky; top: 0; background: rgba(11,15,25,.92); backdrop-filter: blur(8px); }
-    h1 { margin: 0 0 8px; font-size: 18px; font-weight: 700; }
-    .meta { font-size: 12px; opacity: .8; display:flex; gap:12px; flex-wrap: wrap; }
-    .row { display:flex; gap:10px; margin-top: 12px; flex-wrap: wrap; }
-    input { flex: 1; min-width: 220px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: #e8eefc; outline: none; }
-    button { padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.08); color:#e8eefc; cursor:pointer; }
-    main { padding: 16px; max-width: 980px; margin: 0 auto; }
-    .team { border: 1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.04); border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
-    .team summary { list-style:none; cursor:pointer; padding: 14px 14px; display:flex; align-items:center; justify-content: space-between; gap: 10px; }
-    .team summary::-webkit-details-marker { display:none; }
-    .teamName { font-weight: 800; }
-    .badge { font-size: 12px; padding: 4px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); opacity: .9; }
-    .list { padding: 0 14px 14px; display:grid; gap: 10px; }
-    .card { border: 1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.18); border-radius: 12px; padding: 12px; }
-    .topline { display:flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
-    .player { font-weight: 800; }
-    .status { font-weight: 800; font-size: 12px; padding: 3px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); }
-    .sub { margin-top: 6px; font-size: 13px; opacity:.9; }
-    .tiny { margin-top: 6px; font-size: 12px; opacity:.7; }
-    .error { padding: 12px; border-radius: 12px; border: 1px solid rgba(255,80,80,.35); background: rgba(255,80,80,.10); }
+    :root{
+      --bg:#0b0f19;
+      --card:rgba(255,255,255,.05);
+      --text:#e8eefc;
+      --muted:rgba(232,238,252,.75);
+      --border:rgba(255,255,255,.14);
+      --pill:#111a33;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --good:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+    }
+    body.light{
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --text:#0b0f19;
+      --muted:rgba(11,15,25,.70);
+      --border:rgba(0,0,0,.12);
+      --pill:#eef2ff;
+      --shadow: 0 10px 30px rgba(0,0,0,.08);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      transition:.2s;
+    }
+
+    .wrap{max-width:1100px;margin:0 auto;padding:18px}
+    header{
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+      padding:14px 16px; border:1px solid var(--border);
+      background:var(--card); border-radius:16px; box-shadow:var(--shadow);
+      position:sticky; top:10px; z-index:10;
+      backdrop-filter: blur(10px);
+    }
+    .title{display:flex;flex-direction:column;gap:2px}
+    h1{font-size:18px;margin:0}
+    .sub{font-size:12px;color:var(--muted)}
+    .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    button{
+      border:1px solid var(--border);
+      background:var(--pill);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:600;
+    }
+    button:hover{filter:brightness(1.05)}
+    input{
+      border:1px solid var(--border);
+      background:transparent;
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      min-width:220px;
+      outline:none;
+    }
+    .grid{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap:12px;
+    }
+    .panel{
+      grid-column:1 / -1;
+      border:1px solid var(--border);
+      background:var(--card);
+      border-radius:16px;
+      box-shadow:var(--shadow);
+      padding:14px;
+    }
+    .row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12px}
+    .badge{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:var(--pill);
+      color:var(--text);
+      font-weight:700;
+    }
+    .teams{
+      margin-top:12px;
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap:12px;
+    }
+    .team{
+      grid-column: span 6;
+      border:1px solid var(--border);
+      background:var(--card);
+      border-radius:16px;
+      padding:14px;
+      box-shadow:var(--shadow);
+    }
+    @media (max-width: 850px){
+      .team{grid-column: span 12}
+      input{min-width: 160px}
+    }
+
+    .teamHead{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .teamName{
+      font-size:15px;
+      font-weight:900;
+      letter-spacing:.2px;
+      margin:0;
+    }
+    .teamCount{color:var(--muted);font-size:12px}
+
+    .inj{
+      padding:10px 10px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:rgba(0,0,0,.05);
+      margin-top:8px;
+    }
+    body.light .inj{background:rgba(0,0,0,.02)}
+    .injTop{
+      display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+    }
+    .player{font-weight:800}
+    .desc{color:var(--muted);font-size:12px;margin-top:4px}
+    .pill{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      font-weight:900;
+      border:1px solid var(--border);
+      background:var(--pill);
+    }
+    .OUT{color:var(--bad)}
+    .QUESTIONABLE{color:var(--warn)}
+    .DOUBTFUL{color:var(--bad)}
+    .PROBABLE{color:var(--good)}
+
+    .foot{
+      margin-top:12px;
+      color:var(--muted);
+      font-size:12px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:space-between;
+    }
+
+    .error{
+      border:1px solid rgba(239,68,68,.5);
+      background:rgba(239,68,68,.08);
+      color:var(--text);
+      padding:12px;
+      border-radius:14px;
+      margin-top:12px;
+      white-space:pre-wrap;
+      font-size:12px;
+    }
   </style>
 </head>
+
 <body>
-  <header>
-    <h1>NBA Injuries — Grouped by Team</h1>
-    <div class="meta">
-      <div id="source"></div>
-      <div id="refreshed"></div>
-      <div id="count"></div>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>Hoops Status – NBA Injuries</h1>
+        <div class="sub" id="subtitle">Loading…</div>
+      </div>
+
+      <div class="controls">
+        <input id="search" placeholder="Search player or team…" />
+        <button id="refresh">Refresh</button>
+        <button id="themeToggle">🌙 Dark</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div class="panel">
+        <div class="row">
+          <div class="meta">
+            <span class="badge" id="countBadge">0 players</span>
+            <span class="badge" id="teamsBadge">0 teams</span>
+            <span class="badge" id="updatedBadge">Updated: —</span>
+          </div>
+          <div class="meta" id="sourceBadge">Source: —</div>
+        </div>
+
+        <div id="error" class="error" style="display:none"></div>
+
+        <div class="teams" id="teams"></div>
+
+        <div class="foot">
+          <span>Tip: add <b>?fresh=1</b> to force the API to bypass cache.</span>
+          <span id="statusLine">—</span>
+        </div>
+      </div>
     </div>
-    <div class="row">
-      <input id="q" placeholder="Search player, team, injury…" />
-      <button id="expandAll">Expand all</button>
-      <button id="collapseAll">Collapse all</button>
-      <button id="refresh">Refresh</button>
-    </div>
-  </header>
+  </div>
 
-  <main>
-    <div id="root"></div>
-  </main>
+  <script>
+    const API = "https://hoops-api.wadrake.workers.dev/api/nba/injuries";
 
-<script>
-  const API = "https://hoops-api.wadrake.workers.dev/api/nba/injuries";
+    const elTeams = document.getElementById("teams");
+    const elSubtitle = document.getElementById("subtitle");
+    const elCount = document.getElementById("countBadge");
+    const elTeamsBadge = document.getElementById("teamsBadge");
+    const elUpdated = document.getElementById("updatedBadge");
+    const elSource = document.getElementById("sourceBadge");
+    const elError = document.getElementById("error");
+    const elStatusLine = document.getElementById("statusLine");
+    const elSearch = document.getElementById("search");
 
-  const elRoot = document.getElementById("root");
-  const elQ = document.getElementById("q");
-
-  const elSource = document.getElementById("source");
-  const elRefreshed = document.getElementById("refreshed");
-  const elCount = document.getElementById("count");
-
-  document.getElementById("refresh").addEventListener("click", () => load(true));
-  document.getElementById("expandAll").addEventListener("click", () => setAll(true));
-  document.getElementById("collapseAll").addEventListener("click", () => setAll(false));
-  elQ.addEventListener("input", () => render(window.__DATA__ || []));
-
-  function setAll(open) {
-    document.querySelectorAll("details.team").forEach(d => d.open = open);
-  }
-
-  function esc(s) {
-    return String(s ?? "").replace(/[&<>"']/g, (c) => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-    }[c]));
-  }
-
-  function statusLabel(s) {
-    const v = String(s || "").toUpperCase();
-    return v || "UNKNOWN";
-  }
-
-  function groupByTeam(items) {
-    const map = new Map();
-    for (const it of items) {
-      const team = it.team || "—";
-      if (!map.has(team)) map.set(team, []);
-      map.get(team).push(it);
-    }
-    // sort players inside each team
-    for (const [team, arr] of map.entries()) {
-      arr.sort((a,b) => String(a.player||"").localeCompare(String(b.player||"")));
-    }
-    // sort teams
-    return Array.from(map.entries()).sort((a,b) => a[0].localeCompare(b[0]));
-  }
-
-  function matchesQuery(item, q) {
-    if (!q) return true;
-    const blob = [
-      item.player, item.team, item.injury, item.status
-    ].join(" ").toLowerCase();
-    return blob.includes(q);
-  }
-
-  function render(items) {
-    const q = elQ.value.trim().toLowerCase();
-
-    const filtered = items.filter(it => matchesQuery(it, q));
-    const grouped = groupByTeam(filtered);
-
-    elCount.textContent = `Shown: ${filtered.length}${q ? " (filtered)" : ""}`;
-
-    if (!filtered.length) {
-      elRoot.innerHTML = `<div class="error">No results. Try clearing search.</div>`;
-      return;
+    function esc(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
     }
 
-    elRoot.innerHTML = grouped.map(([team, list]) => {
-      const outCount = list.filter(x => String(x.status||"").toUpperCase() === "OUT").length;
-      const qCount = list.filter(x => String(x.status||"").toUpperCase() === "QUESTIONABLE").length;
+    function timeAgo(dateStr){
+      if(!dateStr) return "—";
+      const d = new Date(dateStr);
+      const seconds = Math.floor((Date.now() - d.getTime()) / 1000);
+      if(Number.isNaN(seconds)) return "—";
 
-      return `
-        <details class="team" open>
-          <summary>
-            <div>
-              <div class="teamName">${esc(team)}</div>
-              <div class="tiny">${list.length} injured — OUT: ${outCount}, Q: ${qCount}</div>
+      const m = Math.floor(seconds/60);
+      const h = Math.floor(seconds/3600);
+      const days = Math.floor(seconds/86400);
+
+      if(seconds < 60) return "just now";
+      if(m < 60) return `${m} min ago`;
+      if(h < 24) return `${h} hrs ago`;
+      if(days < 7) return `${days} days ago`;
+
+      return d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    }
+
+    function groupByTeam(items){
+      const map = new Map();
+      for(const it of items){
+        const team = it.team || "—";
+        if(!map.has(team)) map.set(team, []);
+        map.get(team).push(it);
+      }
+      // sort players inside each team: OUT first, then doubtful, questionable, probable, then name
+      const rank = (s) => ({ OUT:0, DOUBTFUL:1, QUESTIONABLE:2, PROBABLE:3 }[s] ?? 9);
+
+      for(const [team, arr] of map){
+        arr.sort((a,b) => {
+          const r = rank(a.status) - rank(b.status);
+          if(r !== 0) return r;
+          return String(a.player).localeCompare(String(b.player));
+        });
+      }
+
+      // sort teams by count desc then name
+      return [...map.entries()].sort((a,b) => {
+        const diff = b[1].length - a[1].length;
+        if(diff !== 0) return diff;
+        return a[0].localeCompare(b[0]);
+      });
+    }
+
+    function render(data){
+      elError.style.display = "none";
+      elError.textContent = "";
+
+      const items = Array.isArray(data.items) ? data.items : [];
+      const grouped = groupByTeam(items);
+
+      // badges
+      elCount.textContent = `${items.length} players`;
+      elTeamsBadge.textContent = `${grouped.length} teams`;
+      elUpdated.textContent = `Updated: ${timeAgo(data.last_refreshed_iso)}`;
+      elSource.textContent = `Source: ${data.note || "—"}`;
+      elSubtitle.textContent = data.last_refreshed_iso ? `Last refresh: ${new Date(data.last_refreshed_iso).toLocaleString()}` : "—";
+
+      // filter
+      const q = (elSearch.value || "").trim().toLowerCase();
+
+      let html = "";
+      let visibleTeams = 0;
+
+      for(const [team, arr] of grouped){
+        const filtered = q
+          ? arr.filter(x =>
+              String(x.team || "").toLowerCase().includes(q) ||
+              String(x.player || "").toLowerCase().includes(q) ||
+              String(x.injury || "").toLowerCase().includes(q) ||
+              String(x.status || "").toLowerCase().includes(q)
+            )
+          : arr;
+
+        if(filtered.length === 0) continue;
+        visibleTeams++;
+
+        html += `
+          <section class="team">
+            <div class="teamHead">
+              <h2 class="teamName">${esc(team)}</h2>
+              <div class="teamCount">${filtered.length} listed</div>
             </div>
-            <span class="badge">${list.length}</span>
-          </summary>
-
-          <div class="list">
-            ${list.map(it => `
-              <div class="card">
-                <div class="topline">
+            ${filtered.map(it => `
+              <div class="inj">
+                <div class="injTop">
                   <div class="player">${esc(it.player || "Unknown")}</div>
-                  <div class="status">${esc(statusLabel(it.status))}</div>
+                  <div class="pill ${esc(it.status || "QUESTIONABLE")}">${esc(it.status || "QUESTIONABLE")}</div>
                 </div>
-                <div class="sub">${esc(it.injury || "Injury")} ${it.expected_return && it.expected_return !== "—" ? `• Return: ${esc(it.expected_return)}` : ""}</div>
-                <div class="tiny">Updated: ${esc(it.updated_iso || "")}</div>
+                <div class="desc">
+                  ${esc(it.injury || "Injury")} • Updated ${timeAgo(it.updated_iso)}
+                </div>
               </div>
             `).join("")}
-          </div>
-        </details>
-      `;
-    }).join("");
-  }
+          </section>
+        `;
+      }
 
-  async function load(forceFresh=false) {
-    elRoot.innerHTML = `<div class="error">Loading…</div>`;
-
-    const url = forceFresh ? `${API}?fresh=1` : API;
-
-    const res = await fetch(url, { cache: "no-store" });
-    const data = await res.json();
-
-    if (!data || !Array.isArray(data.items)) {
-      elRoot.innerHTML = `<div class="error">Bad response from API.</div>`;
-      return;
+      elTeams.innerHTML = html || `<div class="sub">No results.</div>`;
+      elStatusLine.textContent = q
+        ? `Showing ${visibleTeams} teams matching “${q}”`
+        : `Showing ${grouped.length} teams`;
     }
 
-    window.__DATA__ = data.items;
+    async function load(forceFresh=false){
+      elStatusLine.textContent = "Loading…";
+      const url = forceFresh ? `${API}?fresh=1` : API;
 
-    elSource.textContent = `Source: ${data.note || "—"}`;
-    elRefreshed.textContent = `Refreshed: ${data.last_refreshed_iso || "—"}`;
-    render(data.items);
-  }
+      try{
+        const res = await fetch(url, { cache:"no-store" });
+        const data = await res.json();
 
-  load(false);
-</script>
+        // if API returns provider_debug / ok false, show it
+        if(data && data.ok === false){
+          elError.style.display = "block";
+          elError.textContent = "Provider problem:\n" + JSON.stringify(data.provider_debug || data, null, 2);
+        }
+
+        render(data || {});
+        elStatusLine.textContent = forceFresh ? "Loaded (forced fresh)" : "Loaded";
+      }catch(e){
+        elError.style.display = "block";
+        elError.textContent = "Fetch failed:\n" + String(e);
+        elStatusLine.textContent = "Error";
+      }
+    }
+
+    // refresh
+    document.getElementById("refresh").onclick = () => load(true);
+    elSearch.addEventListener("input", () => load(false));
+
+    // DARK/LIGHT TOGGLE
+    const btn = document.getElementById("themeToggle");
+    function setTheme(mode){
+      if(mode === "light"){
+        document.body.classList.add("light");
+        btn.textContent = "☀️ Light";
+        localStorage.setItem("theme","light");
+      } else {
+        document.body.classList.remove("light");
+        btn.textContent = "🌙 Dark";
+        localStorage.setItem("theme","dark");
+      }
+    }
+    btn.onclick = () => {
+      const current = localStorage.getItem("theme") || "dark";
+      setTheme(current === "dark" ? "light" : "dark");
+    };
+    setTheme(localStorage.getItem("theme") || "dark");
+
+    // initial load
+    load(false);
+
+    // optional auto-refresh every 2 minutes
+    setInterval(() => load(false), 120000);
+  </script>
 </body>
 </html>
+   
+
+ 
+  
+     
+   
+
+      
+             
+ 
      
               
             
@@ -177,3 +407,4 @@
               
 
   
+
