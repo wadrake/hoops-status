@@ -190,7 +190,11 @@ function render() {
 async function fetchInjuries() {
   // Try API route first
   try {
-    const res = await fetch("https://hoops-api.wadrake.workers.dev/api/nba/injuries", { cache: "no-store" });
+    const API_BASE = "https://hoops-api.wadrake.workers.dev";
+
+const res = await fetch(`${API_BASE}/api/nba/injuries`, { cache: "no-store" });
+// (optional for debugging)
+// const res = await fetch(`${API_BASE}/api/nba/injuries?fresh=1`, { cache: "no-store" });
     if (!res.ok) throw new Error(`API error ${res.status}`);
 
     const payload = await res.json();
@@ -274,5 +278,5 @@ init().catch((err) => {
     "Local: ensure injuries.json is in the same folder and you are running a local server.\n" +
     "Deployed: ensure /api/nba/injuries is routed to your Worker."
   );
-
 });
+
