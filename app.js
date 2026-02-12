@@ -2,21 +2,22 @@ const $ = (sel) => document.querySelector(sel);
 
 const state = {
   data: null,
-  q: "",
   status: "ALL",
   team: "ALL",
   sortBy: "UPDATED_DESC",
   apiNote: null
 };
 
+// ---------- Theme ----------
 function loadTheme() {
   const saved = localStorage.getItem("hs_theme");
-  if (saved) document.documentElement.setAttribute("data-theme", saved);
+  const theme = saved || "light"; // light default
+  document document.documentElement.setAttribute("data-theme", theme);
   updateThemeButton();
 }
 
 function toggleTheme() {
-  const cur = document.documentElement.getAttribute("data-theme") || "dark";
+  const cur = document.documentElement.getAttribute("data-theme") || "light";
   const next = cur === "light" ? "dark" : "light";
   document.documentElement.setAttribute("data-theme", next);
   localStorage.setItem("hs_theme", next);
@@ -24,10 +25,11 @@ function toggleTheme() {
 }
 
 function updateThemeButton() {
-  const cur = document.documentElement.getAttribute("data-theme") || "dark";
+  const cur = document.documentElement.getAttribute("data-theme") || "light";
   $("#themeToggle").textContent = cur === "light" ? "Dark" : "Light";
 }
 
+// ---------- Formatting ----------
 function fmtRelative(iso) {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "—";
@@ -39,6 +41,17 @@ function fmtRelative(iso) {
   if (hrs < 24) return `${hrs} hr ago`;
   const days = Math.floor(hrs / 24);
   return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
+function fmtUpdated(iso) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
 }
 
 function escapeHtml(s) {
@@ -57,10 +70,12 @@ function badge(status) {
   `;
 }
 
+// ---------- Sorting & Filtering ----------
 function sortItems(items) {
   const copy = [...items];
   const by = state.sortBy;
 
+  // ESPN-ish: status severity first if you choose STATUS_ASC
   const statusOrder = { OUT: 0, DOUBTFUL: 1, QUESTIONABLE: 2, PROBABLE: 3 };
 
   copy.sort((a, b) => {
@@ -76,50 +91,28 @@ function sortItems(items) {
 }
 
 function applyFilters(items) {
-  const q = state.q.trim().toLowerCase();
-
   return items.filter((it) => {
-    const player = (it.player || "").toLowerCase();
-    const matchesQ = !q || player.includes(q);
-
     const st = String(it.status || "").toUpperCase();
     const matchesStatus = state.status === "ALL" || st === state.status;
-
     const matchesTeam = state.team === "ALL" || it.team === state.team;
-
-    return matchesQ && matchesStatus && matchesTeam;
+    return matchesStatus && matchesTeam;
   });
 }
 
-function renderTable(tableEl, emptyEl, rows) {
-  const tbody = tableEl.querySelector("tbody");
-  tbody.innerHTML = "";
-
-  if (!rows.length) {
-    emptyEl.hidden = false;
-    return;
+function groupByTeam(items) {
+  const map = new Map();
+  for (const it of items) {
+    const t = it.team || "—";
+    if (!map.has(t)) map.set(t, []);
+    map.get(t).push(it);
   }
-  emptyEl.hidden = true;
-
-  for (const it of rows) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><strong>${escapeHtml(it.player)}</strong></td>
-      <td>${escapeHtml(it.team)}</td>
-      <td>${escapeHtml(it.injury)}</td>
-      <td>${badge(it.status)}</td>
-      <td>${escapeHtml(it.expected_return || "—")}</td>
-      <td class="muted" title="${escapeHtml(it.updated_iso)}">${fmtRelative(it.updated_iso)}</td>
-    `;
-    tbody.appendChild(tr);
-  }
+  return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 }
 
+// ---------- UI ----------
 function populateTeamFilter(items) {
   const teams = Array.from(new Set(items.map((x) => x.team).filter(Boolean))).sort();
   const sel = $("#teamFilter");
-
-  // preserve "All Teams" option
   sel.querySelectorAll("option:not([value='ALL'])").forEach((o) => o.remove());
 
   for (const t of teams) {
@@ -134,11 +127,10 @@ function updateMeta(totalRows, filteredRows) {
   const lr = state.data?.last_refreshed_iso;
 
   $("#lastRefreshedPill").textContent =
-    `Last refreshed: ${lr ? new Date(lr).toLocaleString() : "—"}`;
+    `Last refreshed: ${lr ? fmtUpdated(lr) : "—"} (${lr ? fmtRelative(lr) : "—"})`;
 
   $("#rowsPill").textContent = `Players: ${filteredRows} / ${totalRows}`;
 
-  // Optional: show provider note if present (won't break if element doesn't exist)
   const noteEl = document.getElementById("apiNote");
   if (noteEl) {
     if (state.apiNote) {
@@ -150,16 +142,66 @@ function updateMeta(totalRows, filteredRows) {
   }
 }
 
+function renderEspnTable(rows) {
+  const table = $("#injuriesByTeamTable");
+  const tbody = table.querySelector("tbody");
+  const emptyEl = $("#injuriesEmpty");
+
+  tbody.innerHTML = "";
+
+  if (!rows.length) {
+    emptyEl.hidden = false;
+    table.hidden = true;
+    return;
+  }
+
+  emptyEl.hidden = true;
+  table.hidden = false;
+
+  const grouped = groupByTeam(rows);
+
+  for (const [team, items] of grouped) {
+    const trTeam = document.createElement("tr");
+    trTeam.className = "teamRow";
+    trTeam.innerHTML = `<td colspan="6">${escapeHtml(team)}</td>`;
+    tbody.appendChild(trTeam);
+
+    const sorted = sortItems(items);
+    for (const it of sorted) {
+      const tr = document.createElement("tr");
+      tr.className = "playerRow";
+      tr.innerHTML = `
+        <td class="nameCell">
+          <div class="playerName">${escapeHtml(it.player)}</div>
+          <div class="injurySub">${escapeHtml(it.injury || "—")}</div>
+        </td>
+        <td class="colPos">${escapeHtml(it.pos || "—")}</td>
+        <td class="colReturn">${escapeHtml(it.expected_return || "—")}</td>
+        <td class="colStatus">${badge(it.status)}</td>
+        <td class="commentCell">${escapeHtml(it.comment || "—")}</td>
+        <td class="colUpdated" title="${escapeHtml(it.updated_iso)}">
+          ${escapeHtml(fmtUpdated(it.updated_iso))}<br>
+          <span class="muted">${escapeHtml(fmtRelative(it.updated_iso))}</span>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+}
+
+// ---------- Data ----------
 function normalizeIncoming(payload) {
-  // Ensure shape: { last_refreshed_iso, items: [] }
   const items = Array.isArray(payload?.items) ? payload.items : [];
+
   const normalizedItems = items.map((it) => ({
     player: it.player ?? "Unknown",
     team: it.team ?? "—",
+    pos: it.pos ?? it.position ?? "—",
     injury: it.injury ?? "—",
     status: String(it.status ?? "QUESTIONABLE").toUpperCase(),
     expected_return: it.expected_return ?? "—",
-    updated_iso: it.updated_iso ?? new Date().toISOString()
+    updated_iso: it.updated_iso ?? new Date().toISOString(),
+    comment: it.comment ?? "—"
   }));
 
   return {
@@ -169,32 +211,10 @@ function normalizeIncoming(payload) {
   };
 }
 
-function render() {
-  const all = state.data?.items || [];
-  const filtered = applyFilters(all);
-  const sorted = sortItems(filtered);
-
-  const outTonight = sortItems(all.filter((x) => String(x.status).toUpperCase() === "OUT"));
-
-  renderTable($("#injuriesTable"), $("#injuriesEmpty"), sorted);
-  renderTable($("#outTonightTable"), $("#outTonightEmpty"), outTonight);
-
-  updateMeta(all.length, sorted.length);
-}
-
-/**
- * Fetch injuries.
- * - Production: hits /api/nba/injuries (Cloudflare Worker route)
- * - Local dev fallback: ./injuries.json
- */
 async function fetchInjuries() {
-  // Try API route first
+  // Production: your worker route
   try {
-    const API_BASE = "https://hoops-api.wadrake.workers.dev";
-
-const res = await fetch(`${API_BASE}/api/nba/injuries`, { cache: "no-store" });
-// (optional for debugging)
-// const res = await fetch(`${API_BASE}/api/nba/injuries?fresh=1`, { cache: "no-store" });
+    const res = await fetch("/api/nba/injuries", { cache: "no-store" });
     if (!res.ok) throw new Error(`API error ${res.status}`);
 
     const payload = await res.json();
@@ -202,11 +222,10 @@ const res = await fetch(`${API_BASE}/api/nba/injuries`, { cache: "no-store" });
 
     state.apiNote = normalized.note;
     state.data = normalized;
-
     populateTeamFilter(state.data.items || []);
     return;
   } catch (err) {
-    // Fallback to local file for localhost development
+    // Local dev fallback
     const res2 = await fetch("./injuries.json", { cache: "no-store" });
     if (!res2.ok) {
       const text2 = await res2.text().catch(() => "");
@@ -225,22 +244,18 @@ const res = await fetch(`${API_BASE}/api/nba/injuries`, { cache: "no-store" });
   }
 }
 
+function render() {
+  const all = state.data?.items || [];
+  const filtered = applyFilters(all);
+  renderEspnTable(filtered);
+  updateMeta(all.length, filtered.length);
+}
+
+// ---------- Init ----------
 async function init() {
   loadTheme();
   $("#themeToggle").addEventListener("click", toggleTheme);
-
   $("#year").textContent = String(new Date().getFullYear());
-
-  $("#q").addEventListener("input", (e) => {
-    state.q = e.target.value || "";
-    render();
-  });
-
-  $("#clearSearch").addEventListener("click", () => {
-    state.q = "";
-    $("#q").value = "";
-    render();
-  });
 
   $("#statusFilter").addEventListener("change", (e) => {
     state.status = e.target.value;
@@ -252,15 +267,10 @@ async function init() {
     render();
   });
 
-  $("#sortBy").addEventListener("change", (e) => {
-    state.sortBy = e.target.value;
-    render();
-  });
-
   await fetchInjuries();
   render();
 
-  // Auto-refresh the dashboard every 2 minutes (re-fetch latest from API or local file)
+  // Auto-refresh every 2 minutes
   setInterval(async () => {
     try {
       await fetchInjuries();
@@ -279,4 +289,5 @@ init().catch((err) => {
     "Deployed: ensure /api/nba/injuries is routed to your Worker."
   );
 });
+
 
